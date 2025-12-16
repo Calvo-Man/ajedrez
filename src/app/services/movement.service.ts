@@ -23,7 +23,7 @@ export class MovementService {
       board
     );
 
-    return this.http.post<{ row: number; col: number }[]>(
+    return this.http.post(
       `${this.apiUrl}/valid-moves`,
       {
         piece,

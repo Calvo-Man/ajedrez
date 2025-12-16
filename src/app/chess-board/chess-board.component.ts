@@ -11,13 +11,23 @@ import { Board } from '../interfaces/Board.interface';
   selector: 'app-chess-board',
   templateUrl: './chess-board.component.html',
   styleUrls: ['./chess-board.component.css'],
-  imports: [CommonModule, DragDropModule], // 👈 AQUÍ
+  imports: [CommonModule, DragDropModule],
   standalone: true,
 })
 export class ChessBoardComponent {
   board: Board = [];
   currentTurn: 'white' | 'black' = 'white';
   validMoves: { row: number; col: number }[] = [];
+  capturedWhite: Piece[] = [];
+  capturedBlack: Piece[] = [];
+  lastMove: {
+    from: { row: number; col: number };
+    to: { row: number; col: number };
+  } | null = null;
+  movingPiece: {
+    from: { row: number; col: number };
+    to: { row: number; col: number };
+  } | null = null;
 
   constructor(private movementService: MovementService) {
     this.createBoard();
@@ -94,44 +104,82 @@ export class ChessBoardComponent {
     const targetCol = Number(cellElement.dataset.col);
 
     const { row: fromRow, col: fromCol } = this.dragFrom;
-
-    // 🔒 Regla 1: misma casilla
-    if (fromRow === targetRow && fromCol === targetCol) {
-      console.log('Movimiento inválido: misma casilla');
-      this.dragFrom = null;
-      return;
-    }
-
     const piece = this.board[fromRow][fromCol].piece;
+
     if (!piece) return;
 
+    // ❌ Misma casilla
+    if (fromRow === targetRow && fromCol === targetCol) {
+      this.dragFrom = null;
+      this.validMoves = [];
+      return;
+    }
+    
+    // ❌ Movimiento no permitido por backend
+    // if (!this.isValidCell(targetRow, targetCol)) {
+    //   this.dragFrom = null;
+    //   this.validMoves = [];
+    //   return;
+    // }
+    
     const targetPiece = this.board[targetRow][targetCol].piece;
-
-    // 🔒 Regla 2: no comer pieza del mismo color
+    // 🟥 Mismo color
     if (targetPiece && targetPiece.color === piece.color) {
-      console.log('Movimiento inválido: pieza del mismo color');
+      this.dragFrom = null;
+      this.validMoves = [];
+      return;
+    }
+    // 🟢 Preparar animación
+    this.movingPiece = {
+      from: { row: fromRow, col: fromCol },
+      to: { row: targetRow, col: targetCol },
+    };
+
+    // 🟥 CAPTURA
+    if (targetPiece && targetPiece.color !== piece.color) {
+      if (targetPiece.color === 'white') {
+        this.capturedWhite.push(targetPiece);
+      } else {
+        this.capturedBlack.push(targetPiece);
+      }
+
+      this.board[targetRow][targetCol].capturing = true;
+
+      setTimeout(() => {
+        this.board[targetRow][targetCol].piece = piece;
+        this.board[targetRow][targetCol].capturing = false;
+        this.board[fromRow][fromCol].piece = undefined;
+
+        this.lastMove = {
+          from: { row: fromRow, col: fromCol },
+          to: { row: targetRow, col: targetCol },
+        };
+
+        this.movingPiece = null;
+        this.validMoves = [];
+        this.currentTurn = this.currentTurn === 'white' ? 'black' : 'white';
+      }, 300);
+
       this.dragFrom = null;
       return;
     }
 
-    // 🔒 Regla 3: movimientos válidos
-    this.getValidMoves(
-      piece,
-      this.board,
-      { row: fromRow, col: fromCol }
-    );
+    // 🟦 MOVIMIENTO NORMAL
+    setTimeout(() => {
+      this.board[targetRow][targetCol].piece = piece;
+      this.board[fromRow][fromCol].piece = undefined;
 
-    const isValidMove = this.validMoves.some(
-      (move) => move.row === targetRow && move.col === targetCol
-    );
+      this.lastMove = {
+        from: { row: fromRow, col: fromCol },
+        to: { row: targetRow, col: targetCol },
+      };
 
-    this.board[targetRow][targetCol].piece = piece;
-    this.board[fromRow][fromCol].piece = undefined;
+      this.movingPiece = null;
+      this.validMoves = [];
+      this.currentTurn = this.currentTurn === 'white' ? 'black' : 'white';
+    }, 300);
 
     this.dragFrom = null;
-    console.log(this.board);
-    // Cambiar turno
-    this.currentTurn = this.currentTurn === 'white' ? 'black' : 'white';
   }
 
   dragFrom: { row: number; col: number } | null = null;
@@ -146,6 +194,14 @@ export class ChessBoardComponent {
     }
 
     this.dragFrom = { row, col };
+
+    // 🔥 AQUÍ se pide al backend
+    this.movementService
+      .findValidMoves(piece, this.board, { row, col })
+      .subscribe((moves: any) => {
+        this.validMoves = moves;
+        console.log('Casillas permitidas:', moves);
+      });
   }
 
   getTurnLabel() {
@@ -159,9 +215,34 @@ export class ChessBoardComponent {
   ) {
     this.movementService
       .findValidMoves(piece, board, from)
-      .subscribe((moves) => {
+      .subscribe((moves: any) => {
         this.validMoves = moves;
         console.log('Movimientos válidos recibidos del servidor:', moves);
       });
+  }
+  isValidCell(row: number, col: number): boolean {
+    return this.validMoves.some((move) => move.row === row && move.col === col);
+  }
+  isLastMoveCell(row: number, col: number): boolean {
+    if (!this.lastMove) return false;
+
+    const { from, to } = this.lastMove;
+
+    return (
+      (from.row === row && from.col === col) ||
+      (to.row === row && to.col === col)
+    );
+  }
+  getMoveTransform(row: number, col: number): string {
+    if (!this.movingPiece) return '';
+
+    const { from, to } = this.movingPiece;
+
+    if (to.row !== row || to.col !== col) return '';
+
+    const dx = (from.col - to.col) * 100;
+    const dy = (from.row - to.row) * 100;
+
+    return `translate(${dx}%, ${dy}%)`;
   }
 }

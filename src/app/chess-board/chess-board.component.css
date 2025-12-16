@@ -31,7 +31,6 @@
   cursor: grab;
   user-select: none;
   font-size: 60px;
-
 }
 
 .cdk-drag-preview {
@@ -45,5 +44,51 @@
   margin-bottom: 10px;
   font-weight: bold;
   text-align: center;
-  font-size: 20PX;
+  font-size: 20px;
+}
+.game-container {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.captured {
+  width: 100px;
+  min-height: 700px;
+  text-align: center;
+  background-color: #b58863;
+}
+
+.captured h4 {
+  margin-bottom: 8px;
+}
+
+.captured-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+}
+
+.captured-piece {
+  font-size: 40px;
+  opacity: 0.85;
+}
+
+.cell.capturing .piece {
+  animation: captureFade 0.3s ease forwards;
+}
+.cell.last-move {
+  background-color: rgba(255, 215, 0, 0.4);
+}
+
+@keyframes captureFade {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0);
+    opacity: 0;
+  }
 }
