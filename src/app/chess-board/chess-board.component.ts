@@ -28,6 +28,17 @@ export class ChessBoardComponent {
     from: { row: number; col: number };
     to: { row: number; col: number };
   } | null = null;
+  scoreWhite = 0;
+  scoreBlack = 0;
+
+  pieceValues: Record<string, number> = {
+    peon: 1,
+    caballo: 3,
+    alfil: 3,
+    torre: 5,
+    reina: 9,
+    rey: 0,
+  };
 
   constructor(private movementService: MovementService) {
     this.createBoard();
@@ -137,12 +148,17 @@ export class ChessBoardComponent {
 
     // 🟥 CAPTURA
     if (targetPiece && targetPiece.color !== piece.color) {
-      if (targetPiece.color === 'white') {
-        this.capturedWhite.push(targetPiece);
-      } else {
+      const value = this.pieceValues[targetPiece.type] ?? 0;
+
+      if (piece.color === 'white') {
+        this.scoreWhite += value;
         this.capturedBlack.push(targetPiece);
+      } else {
+        this.scoreBlack += value;
+        this.capturedWhite.push(targetPiece);
       }
 
+      // animación
       this.board[targetRow][targetCol].capturing = true;
 
       setTimeout(() => {
@@ -155,12 +171,11 @@ export class ChessBoardComponent {
           to: { row: targetRow, col: targetCol },
         };
 
-        this.movingPiece = null;
-        this.validMoves = [];
         this.currentTurn = this.currentTurn === 'white' ? 'black' : 'white';
       }, 300);
 
       this.dragFrom = null;
+      this.validMoves = [];
       return;
     }
 
