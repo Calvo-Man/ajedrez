@@ -1,0 +1,26 @@
+<p class="turn">
+  Turno: <strong>{{ getTurnLabel() }}</strong>
+</p>
+
+<div class="board" cdkDropList (cdkDropListDropped)="dropPiece($event)">
+  <div class="row" *ngFor="let row of board; let rowIndex = index">
+    <div
+      class="cell"
+      *ngFor="let cell of row; let colIndex = index"
+      [ngClass]="cell.color === 0 ? 'white' : 'black'"
+      [attr.data-row]="rowIndex"
+      [attr.data-col]="colIndex"
+      (click)="startDrag(rowIndex, colIndex)"
+    >
+      <span
+        class="piece"
+        *ngIf="cell.piece"
+        cdkDrag
+        [cdkDragDisabled]="cell.piece.color !== currentTurn"
+        (cdkDragStarted)="startDrag(rowIndex, colIndex)"
+      >
+        {{ getPieceSymbol(cell.piece) }}
+      </span>
+    </div>
+  </div>
+</div>
