@@ -11,15 +11,7 @@ export class MovementService {
   apiUrl = 'http://localhost:8081';
   constructor(private http: HttpClient) {}
 
-  validateMove(
-    from: { row: number; col: number },
-    to: { row: number; col: number },
-    piece: { type: string; color: 'white' | 'black' }
-  ): boolean {
-    // Aquí puedes implementar la lógica de validación de movimientos según el tipo de pieza
-    // Por simplicidad, este ejemplo permite todos los movimientos
-    return true;
-  }
+
   findValidMoves(
     piece: Piece,
     board: Board,
