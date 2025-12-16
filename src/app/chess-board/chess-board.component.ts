@@ -114,14 +114,14 @@ export class ChessBoardComponent {
       this.validMoves = [];
       return;
     }
-    
+
     // ❌ Movimiento no permitido por backend
     // if (!this.isValidCell(targetRow, targetCol)) {
     //   this.dragFrom = null;
     //   this.validMoves = [];
     //   return;
     // }
-    
+
     const targetPiece = this.board[targetRow][targetCol].piece;
     // 🟥 Mismo color
     if (targetPiece && targetPiece.color === piece.color) {
