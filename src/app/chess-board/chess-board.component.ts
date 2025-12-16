@@ -2,11 +2,10 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import { ContentObserver } from '@angular/cdk/observers';
 import { CommonModule } from '@angular/common';
 import { Component } from '@angular/core';
+import { Piece } from '../interfaces/Piece.interface';
 
-type Piece = {
-  type: string;
-  color: 'white' | 'black';
-};
+import { MovementService } from '../services/movement.service';
+import { Board } from '../interfaces/Board.interface';
 
 @Component({
   selector: 'app-chess-board',
@@ -16,10 +15,11 @@ type Piece = {
   standalone: true,
 })
 export class ChessBoardComponent {
-  board: { color: number; piece?: Piece }[][] = [];
+  board: Board = [];
   currentTurn: 'white' | 'black' = 'white';
+  validMoves: { row: number; col: number }[] = [];
 
-  constructor() {
+  constructor(private movementService: MovementService) {
     this.createBoard();
     this.placePieces();
   }
@@ -114,16 +114,15 @@ export class ChessBoardComponent {
       return;
     }
 
-    // ✅ Movimiento válido (por ahora)
-    console.log(
-      'Moviendo',
+    // 🔒 Regla 3: movimientos válidos
+    this.getValidMoves(
       piece,
-      'de',
-      fromRow,
-      fromCol,
-      'a',
-      targetRow,
-      targetCol
+      this.board,
+      { row: fromRow, col: fromCol }
+    );
+
+    const isValidMove = this.validMoves.some(
+      (move) => move.row === targetRow && move.col === targetCol
     );
 
     this.board[targetRow][targetCol].piece = piece;
@@ -151,5 +150,18 @@ export class ChessBoardComponent {
 
   getTurnLabel() {
     return this.currentTurn === 'white' ? 'Blancas' : 'Negras';
+  }
+
+  getValidMoves(
+    piece: Piece,
+    board: Board,
+    from: { row: number; col: number }
+  ) {
+    this.movementService
+      .findValidMoves(piece, board, from)
+      .subscribe((moves) => {
+        this.validMoves = moves;
+        console.log('Movimientos válidos recibidos del servidor:', moves);
+      });
   }
 }
