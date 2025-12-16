@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Piece } from '../interfaces/Piece.interface';
 import { HttpClient } from '@angular/common/http';
-import { J } from '@angular/cdk/keycodes';
 import { Board } from '../interfaces/Board.interface';
 
 @Injectable({
